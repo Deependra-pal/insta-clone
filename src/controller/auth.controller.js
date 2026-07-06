@@ -40,8 +40,62 @@ const registerController = async (req, res) => {
     res.status(201).json({
       success: true,
       message: "User Registered Successfully",
-      token,
+
       user,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+const loginController = async (req, res) => {
+  try {
+    // 1. Get Data
+    const { username, email, password } = req.body;
+
+    // 2. Find User
+    const user = await userModel.findOne({
+      $or: [{ email }, { username }],
+    });
+
+    // 3. User Not Found
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid credentials",
+      });
+    }
+
+    // 4. Compare Password
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (!isMatch) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid credentials",
+      });
+    }
+
+    // 5. Generate JWT
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET_KEY, {
+      expiresIn: "7d",
+    });
+
+    // 6. Store Token in Cookie
+    res.cookie("token", token);
+
+    // 7. Response
+    res.status(200).json({
+      success: true,
+      message: "User login successfully",
+      user: {
+        _id: user._id,
+        username: user.username,
+        email: user.email,
+      },
     });
   } catch (error) {
     res.status(500).json({
@@ -55,4 +109,5 @@ const registerController = async (req, res) => {
 
 module.exports = {
   registerController,
+  loginController,
 };
