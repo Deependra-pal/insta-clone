@@ -7,7 +7,8 @@ const { registerValidation, validate, loginValidation } = require("../middleware
 const router = express.Router();
 
 router.post("/register", registerValidation, validate, authController.registerController);
-router.post("/login" , loginValidation , validate , authController.loginController)
+router.post("/login" , loginValidation , validate , authController.loginController);
+ 
 
 
 
