@@ -10,7 +10,7 @@ const router = express.Router();
 
 router.post("/register", registerValidation, validate, authController.registerController);
 router.post("/login" , loginValidation , validate , authController.loginController);
-router.get("/get-me" , authMiddleware , authController.getMeController)
+router.get("/get-me" , authMiddleware , authController.getMeController);
  
 
 
