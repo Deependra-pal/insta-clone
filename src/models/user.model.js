@@ -26,7 +26,7 @@ const userSchema = new mongoose.Schema({
   },
   profilePicture: {
     type: String,
-    default: "",
+    default:"https://imagekit.io/dashboard/media-library/detail/6a4c95b75c7cd75eb800ea3a",
   },
   bio: {
     type: String,
