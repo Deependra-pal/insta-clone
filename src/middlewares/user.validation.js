@@ -2,9 +2,13 @@ const { body, validationResult } = require("express-validator");
 
 // Register Validation Rules
 const registerValidation = [
-  body("username").notEmpty().withMessage("Username is required"),
+  body("username")
+  .trim()
+  .notEmpty()
+  .withMessage("Username is required"),
 
   body("email")
+    .trim()
     .notEmpty()
     .withMessage("Email is required")
     .isEmail()
@@ -19,6 +23,7 @@ const registerValidation = [
 
 const loginValidation = [
   body("password")
+    .trim()
     .notEmpty()
     .withMessage("Password is required")
     .isLength({ min: 8 })
@@ -28,9 +33,20 @@ const loginValidation = [
     if (!value.username && !value.email) {
       throw new Error("Username or Email is required");
     }
-
     return true;
   }),
+
+  body("email")
+    .optional()
+    .trim()
+    .isEmail()
+    .withMessage("Invalid email format"),
+
+  body("username")
+    .optional()
+    .trim()
+    .isLength({ min: 3 })
+    .withMessage("Username must be at least 3 characters"),
 ];
 
 // Validation Error Middleware
