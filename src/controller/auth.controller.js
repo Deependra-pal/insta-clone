@@ -114,9 +114,41 @@ const loginController = async (req, res) => {
     });
   }
 };
+ 
+const getMeController = async (req, res) => {
+  try {
+    // 1. Get User ID from Middleware
+    const userId = req.userId;
+
+    // 2. Find User
+    const user = await userModel.findById(userId).select("-password");
+
+    // 3. User Not Found
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    // 4. Response
+    return res.status(200).json({
+      success: true,
+      message: "User fetched successfully",
+      user,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 
 
 module.exports = {
   registerController,
   loginController,
+  getMeController
 };
