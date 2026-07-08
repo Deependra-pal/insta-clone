@@ -2,8 +2,6 @@ const userModel = require("../models/user.model");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
-
-
 const registerController = async (req, res) => {
   try {
     // 1. req.body se data lena
@@ -116,7 +114,7 @@ const loginController = async (req, res) => {
     });
   }
 };
- 
+
 const getMeController = async (req, res) => {
   try {
     // 1. Get User ID from Middleware
@@ -147,12 +145,27 @@ const getMeController = async (req, res) => {
   }
 };
 
+const logoutController = async (req, res) => {
+  try {
+    // Clear Cookie
+    res.clearCookie("token");
 
-
-
+    // Response
+    return res.status(200).json({
+      success: true,
+      message: "User logged out successfully",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
 
 module.exports = {
   registerController,
   loginController,
-  getMeController
+  getMeController,
+  logoutController
 };
