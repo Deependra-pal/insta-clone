@@ -63,6 +63,7 @@ const validate = (req, res, next) => {
   next();
 };
 
+
 module.exports = {
   registerValidation,
   loginValidation,
