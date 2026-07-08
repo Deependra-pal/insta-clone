@@ -2,10 +2,7 @@ const { body, validationResult } = require("express-validator");
 
 // Register Validation Rules
 const registerValidation = [
-  body("username")
-  .trim()
-  .notEmpty()
-  .withMessage("Username is required"),
+  body("username").trim().notEmpty().withMessage("Username is required"),
 
   body("email")
     .trim()
@@ -36,11 +33,7 @@ const loginValidation = [
     return true;
   }),
 
-  body("email")
-    .optional()
-    .trim()
-    .isEmail()
-    .withMessage("Invalid email format"),
+  body("email").optional().trim().isEmail().withMessage("Invalid email format"),
 
   body("username")
     .optional()
@@ -62,7 +55,6 @@ const validate = (req, res, next) => {
 
   next();
 };
-
 
 module.exports = {
   registerValidation,

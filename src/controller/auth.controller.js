@@ -167,5 +167,5 @@ module.exports = {
   registerController,
   loginController,
   getMeController,
-  logoutController
+  logoutController,
 };
