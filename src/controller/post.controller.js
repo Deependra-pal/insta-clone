@@ -96,6 +96,15 @@ const getPostController = async (req, res) => {
       owner: userId,
     });
 
+    // 3. Check if User Has Any Posts
+    if (posts.length === 0) {
+      return res.status(200).json({
+        success: true,
+        message: "No posts found",
+        posts: [],
+      });
+    }
+
     // 3. Send Success Response with Data
     return res.status(200).json({
       success: true,
