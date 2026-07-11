@@ -4,7 +4,7 @@ const postSchema = new mongoose.Schema(
   {
     image: {
       type: String,
-      required: true,
+      required: [true,"image is require for creating post"],
       trim: true,
     },
     caption: {

@@ -7,11 +7,12 @@ const connectToDb = require('./src/config/database')
 
 
 
-connectToDb()
 
-
-
-
-app.listen(5000,()=>{
+const startServer = async () => {
+  await connectToDb();
+  app.listen(5000, () => {
     console.log("server is running on port 5000");
-})
+  });
+};
+
+startServer();
