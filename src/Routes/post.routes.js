@@ -59,4 +59,6 @@ router.get(
   postController.getPostDeatilsController,
 );
 
+router.patch("/update/:postId",authMiddleware,postController.updatePostController)
+
 module.exports = router;

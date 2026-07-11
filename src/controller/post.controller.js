@@ -140,7 +140,7 @@ const getPostDeatilsController = async (req, res) => {
     }
 
     // 5. Check if Logged-in User Owns the Post
-    if (!post.owner.equals(req.userId)) {
+    if (!post.owner.equals(userId)) {
       return res.status(403).json({
         success: false,
         message: "You are not authorized to access this post",
@@ -162,9 +162,60 @@ const getPostDeatilsController = async (req, res) => {
   }
 };
 
+const updatePostController = async(req,res)=>{
+ try{
+   // 1. Get Logged-in User ID from Auth Middleware
+    const userId = req.userId;
+
+    // 2. Get Post ID from Request Parameters
+    const postId = req.params.postId;
+
+        // 3. Get Updated Caption from Request Body
+    const { caption } = req.body;
+
+    // 4. Find the Post by ID
+    const post = await postModel.findById(postId);
+
+     // 5. Check if the Post Exists
+    if (!post) {
+      return res.status(404).json({
+        success: false,
+        message: "Post not found",
+      });
+    }
+
+    // 6. Check if Logged-in User Owns the Post
+    if (!post.owner.equals(userId)) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not authorized to access this post",
+      });
+    }
+
+     // 7. Update Post Caption
+    post.caption = caption;
+
+    // 8. Save Updated Post
+    await post.save();
+
+    // 9. Send Success Response
+    return res.status(200).json({
+      success: true,
+      message: "Post updated successfully",
+      post,
+    });
+ }catch(err){
+   return res.status(500).json({
+    sucess:false,
+    message : "err.message"
+   })
+ }
+}
+
 
 module.exports = {
   createPostController,
   getPostController,
   getPostDeatilsController,
+  updatePostController
 };
