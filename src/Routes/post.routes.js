@@ -61,4 +61,8 @@ router.get(
 
 router.patch("/update/:postId",authMiddleware,postController.updatePostController)
 
+router.delete("/delete/:postId" , authMiddleware , postController.deletePostController)
+
+
+
 module.exports = router;

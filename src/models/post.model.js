@@ -4,7 +4,12 @@ const postSchema = new mongoose.Schema(
   {
     image: {
       type: String,
-      required: [true,"image is require for creating post"],
+      required: [true, "image is require for creating post"],
+      trim: true,
+    },
+    imageFileId: {
+      type: String,
+      default: "",
       trim: true,
     },
     caption: {

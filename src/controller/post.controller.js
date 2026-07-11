@@ -60,6 +60,7 @@ const createPostController = async (req, res) => {
     const post = await postModel.create({
       caption: req.body.caption,
       image: file.url,
+      imageFileId: file.fileId, 
       owner: decoded.id,
     });
 
@@ -162,21 +163,21 @@ const getPostDeatilsController = async (req, res) => {
   }
 };
 
-const updatePostController = async(req,res)=>{
- try{
-   // 1. Get Logged-in User ID from Auth Middleware
+const updatePostController = async (req, res) => {
+  try {
+    // 1. Get Logged-in User ID from Auth Middleware
     const userId = req.userId;
 
     // 2. Get Post ID from Request Parameters
     const postId = req.params.postId;
 
-        // 3. Get Updated Caption from Request Body
+    // 3. Get Updated Caption from Request Body
     const { caption } = req.body;
 
     // 4. Find the Post by ID
     const post = await postModel.findById(postId);
 
-     // 5. Check if the Post Exists
+    // 5. Check if the Post Exists
     if (!post) {
       return res.status(404).json({
         success: false,
@@ -192,7 +193,7 @@ const updatePostController = async(req,res)=>{
       });
     }
 
-     // 7. Update Post Caption
+    // 7. Update Post Caption
     post.caption = caption;
 
     // 8. Save Updated Post
@@ -204,18 +205,63 @@ const updatePostController = async(req,res)=>{
       message: "Post updated successfully",
       post,
     });
- }catch(err){
-   return res.status(500).json({
-    sucess:false,
-    message : "err.message"
-   })
- }
-}
+  } catch (err) {
+    return res.status(500).json({
+      sucess: false,
+      message: "err.message",
+    });
+  }
+};
 
+const deletePostController = async (req, res) => {
+  try {
+    // 1. Get Logged-in User ID from Auth Middleware
+    const userId = req.userId;
+
+    // 2. Get Post ID from Request Parameters
+    const postId = req.params.postId;
+
+    // 4. Find the Post by ID
+    const post = await postModel.findById(postId);
+
+    // 5. Check if the Post Exists
+    if (!post) {
+      return res.status(404).json({
+        success: false,
+        message: "Post not found",
+      });
+    }
+
+    // 6. Check if Logged-in User Owns the Post
+    if (!post.owner.equals(userId)) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not authorized to access this post",
+      });
+    }
+
+    // 7. Delete Image from ImageKit
+    await client.files.delete(post.imageFileId);
+
+    // 8. Delete Post from Database
+    await post.deleteOne();
+
+    return res.status(200).json({
+      success: true,
+      message: "Post delete sucessfully",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
 
 module.exports = {
   createPostController,
   getPostController,
   getPostDeatilsController,
-  updatePostController
+  updatePostController,
+  deletePostController,
 };
