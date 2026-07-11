@@ -119,11 +119,9 @@ const getPostController = async (req, res) => {
     });
   }
 };
- 
 
 const getPostDeatilsController = async (req, res) => {
   try {
-
     // 1. Get Logged-in User ID from Auth Middleware
     const userId = req.userId;
 
@@ -141,10 +139,8 @@ const getPostDeatilsController = async (req, res) => {
       });
     }
 
-    // 5. Check if the Logged-in User Owns the Post
-    const isOwner = post.owner.toString() === userId;
-
-    if (!isOwner) {
+    // 5. Check if Logged-in User Owns the Post
+    if (!post.owner.equals(req.userId)) {
       return res.status(403).json({
         success: false,
         message: "You are not authorized to access this post",
@@ -157,19 +153,18 @@ const getPostDeatilsController = async (req, res) => {
       message: "Post fetched successfully",
       post,
     });
-
   } catch (error) {
-
     // 7. Handle Server Errors
     return res.status(500).json({
       success: false,
       message: error.message,
     });
-
   }
 };
+
+
 module.exports = {
   createPostController,
   getPostController,
-  getPostDeatilsController
+  getPostDeatilsController,
 };
