@@ -1,12 +1,13 @@
 const { body, validationResult } = require("express-validator");
 
 const createPostValidation = [
-  body("caption")
+ body("caption")
     .optional()
     .isLength({ max: 500 })
     .withMessage("Caption must be less than 500 characters"),
-];
 
+]
+ 
 const validateImage = (req, res, next) => {
   if (!req.file) {
     return res.status(400).json({
@@ -30,4 +31,5 @@ const validate = (req, res, next) => {
 
   next();
 };
+
 module.exports = { createPostValidation, validate };
