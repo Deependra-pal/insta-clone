@@ -6,7 +6,10 @@
 
 const express = require("express");
 const authMiddleware = require("../middlewares/auth.middleware");
-const { createPostValidation, validate } = require("../validations/post.validation");
+const {
+  createPostValidation,
+  validate,
+} = require("../validations/post.validation");
 const multer = require("multer");
 
 // Configure multer storage: We use memory storage to keep files as buffers
@@ -32,7 +35,7 @@ router.post(
   createPostValidation,
   validate,
   authMiddleware,
-  postController.createPostController
+  postController.createPostController,
 );
 
 /**
@@ -42,5 +45,18 @@ router.post(
  * Controller: getPostController (Fetches all posts belonging to the authenticated user)
  */
 router.get("/", authMiddleware, postController.getPostController);
+
+// ========================================
+// Get Single Post Controller
+// Method: GET
+// Route: /api/posts/:postId
+// Access: Private
+// Purpose: Retrieve a specific post created by the logged-in user.
+// ========================================
+router.get(
+  "/details/:postId",
+  authMiddleware,
+  postController.getPostDeatilsController,
+);
 
 module.exports = router;
