@@ -59,10 +59,23 @@ router.get(
   postController.getPostDeatilsController,
 );
 
-router.patch("/update/:postId",authMiddleware,postController.updatePostController)
+// ========================================
+// Update Post
+// Method: PATCH
+// Route: /api/posts/update/:postId
+// Access: Private
+// Purpose: Update the caption of a post owned by the logged-in user.
+// ========================================
+router.patch(
+  "/update/:postId",
+  authMiddleware,
+  postController.updatePostController,
+);
 
-router.delete("/delete/:postId" , authMiddleware , postController.deletePostController)
-
-
+router.delete(
+  "/delete/:postId",
+  authMiddleware,
+  postController.deletePostController,
+);
 
 module.exports = router;
