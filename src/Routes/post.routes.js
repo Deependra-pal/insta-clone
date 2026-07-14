@@ -84,8 +84,7 @@ router.delete(
 
 // Route : /api/posts/:postId/like
 
-router.post("/posts/:postId/like",authMiddleware, postController.likeController)
-
+router.post("/likes/:postId", authMiddleware, postController.likeController)
 
 
 

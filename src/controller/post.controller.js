@@ -291,7 +291,7 @@ const likeController = async (req, res) => {
     let message = "";
 
     // 6. If already liked: Remove the user's ObjectId from the likes array
-    if (hasLiked) {
+    if (alreadyLiked) {
       post.likes.pull(userId);
       // Set message to "Post unliked successfully"
       message = "Post unliked successfully";
