@@ -7,6 +7,7 @@
 const { toFile } = require("@imagekit/nodejs");
 const client = require("../config/imageKit.config");
 const postModel = require("../models/post.model");
+const likeModel = require("../models/like.model");
 
 /**
  * Function Name: createPostController
@@ -289,7 +290,7 @@ const likeController = async (req, res) => {
     // 2. Get Post ID from request params
     const postId = req.params.postId;
 
-    // 3. Find the post by ID
+    // 3. Find the post by ID (to ensure it exists)
     const post = await postModel.findById(postId);
 
     // 4. Return 404 if the post does not exist
@@ -302,27 +303,33 @@ const likeController = async (req, res) => {
     }
 
     // 5. Check whether the logged-in user has already liked the post
-    const alreadyLiked = post.likes.some((id) => id.equals(userId));
+    const existingLike = await likeModel.findOne({ postId, userId });
 
     let message = "";
 
     // 6. Toggle Like state
-    if (alreadyLiked) {
-      post.likes.pull(userId);
+    if (existingLike) {
+      // If already liked, delete the Like document (unlike)
+      await likeModel.deleteOne({ _id: existingLike._id });
       message = "Post unliked successfully";
     } else {
-      post.likes.push(userId);
+      // If not liked, create a new Like document (like)
+      await likeModel.create({ postId, userId });
       message = "Post liked successfully";
     }
 
-    // 7. Save the updated post
-    await post.save();
+    // 7. Get the updated total likes count for this post
+    const likesCount = await likeModel.countDocuments({ postId });
 
-    // 8. Return success response with updated post
+    // 8. Return success response
     return res.status(200).json({
       success: true,
       message,
-      data: { post },
+      data: {
+        postId,
+        likesCount,
+        isLiked: !existingLike,
+      },
     });
   } catch (error) {
     // 9. Handle server errors properly
