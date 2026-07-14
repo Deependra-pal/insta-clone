@@ -60,7 +60,7 @@ const createPostController = async (req, res) => {
     const post = await postModel.create({
       caption: req.body.caption,
       image: file.url,
-      imageFileId: file.fileId, 
+      imageFileId: file.fileId,
       owner: decoded.id,
     });
 
@@ -258,10 +258,73 @@ const deletePostController = async (req, res) => {
   }
 };
 
+
+/**
+ * Function Name: likeController
+ * HTTP Method: POST
+ * Route: /api/posts/:postId/like
+ * Access: Private
+ * Purpose: Toggle like status (like/unlike) of a post for the authenticated user.
+ */
+const likeController = async (req, res) => {
+  try {
+    // 1. Get Logged-in User ID from auth middleware
+    const userId = req.userId;
+
+    // 2. Get Post ID from request params
+    const postId = req.params.postId;
+
+    // 3. Find the post by ID
+    const post = await postModel.findById(postId);
+
+    // 4. Return 404 if the post does not exist
+    if (!post) {
+      return res.status(404).json({
+        success: false,
+        message: "Post not found",
+      });
+    }
+
+    // 5. Check whether the logged-in user has already liked the post
+    const alreadyLiked = post.likes.some((id) => id.equals(userId));
+
+    let message = "";
+
+    // 6. If already liked: Remove the user's ObjectId from the likes array
+    if (hasLiked) {
+      post.likes.pull(userId);
+      // Set message to "Post unliked successfully"
+      message = "Post unliked successfully";
+    } else {
+      // 7. If not liked: Push the user's ObjectId into the likes array
+      post.likes.push(userId);
+      // Set message to "Post liked successfully"
+      message = "Post liked successfully";
+    }
+
+    // 8. Save the updated post
+    await post.save();
+
+    // 9. Return success response with updated post
+    return res.status(200).json({
+      success: true,
+      message,
+      post,
+    });
+  } catch (error) {
+    // 10. Handle server errors properly
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 module.exports = {
   createPostController,
   getPostController,
   getPostDeatilsController,
   updatePostController,
   deletePostController,
+  likeController,
 };

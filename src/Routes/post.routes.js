@@ -79,4 +79,15 @@ router.delete(
   postController.deletePostController,
 );
 
+// ⬜ Like Post
+// Method : POST
+
+// Route : /api/posts/:postId/like
+
+router.post("/posts/:postId/like",authMiddleware, postController.likeController)
+
+
+
+
+
 module.exports = router;
