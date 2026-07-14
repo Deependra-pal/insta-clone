@@ -5,6 +5,7 @@
  */
 
 const userModel = require("../models/user.model");
+const followModel = require("../models/follow.model");
 
 /**
  * Controller Name: getUserProfileController
@@ -38,8 +39,15 @@ const getUserProfileController = async (req, res) => {
     // - isMe: true if the requested profile belongs to the logged-in user
     const isMe = user._id.toString() === req.userId.toString();
 
-    // - isFollowing: true if the logged-in user is in the requested user's followers list
-    const isFollowing = user.followers.includes(req.userId);
+    // - isFollowing: true if the logged-in user is following the target user
+    const isFollowing = await followModel.exists({
+      followerId: req.userId,
+      followingId: userId,
+    });
+
+    // - Count followers and following using Follow model
+    const followersCount = await followModel.countDocuments({ followingId: userId });
+    const followingCount = await followModel.countDocuments({ followerId: userId });
 
     // 5. Send successful response with user details in standard format
     return res.status(200).json({
@@ -53,12 +61,12 @@ const getUserProfileController = async (req, res) => {
           email: user.email,
           profilePicture: user.profilePicture,
           bio: user.bio,
-          followersCount: user.followers.length,
-          followingCount: user.following.length,
+          followersCount,
+          followingCount,
           postsCount: user.posts.length,
           posts: user.posts,
           isMe,
-          isFollowing,
+          isFollowing: !!isFollowing,
         },
       },
     });
@@ -142,11 +150,10 @@ const followUnfollowUserController = async (req, res) => {
       });
     }
 
-    // 2. Retrieve both target user and logged-in user profiles
+    // 2. Retrieve target user profile (to verify existence)
     const targetUser = await userModel.findById(targetUserId);
-    const loggedInUser = await userModel.findById(loggedInUserId);
 
-    if (!targetUser || !loggedInUser) {
+    if (!targetUser) {
       return res.status(404).json({
         success: false,
         message: "User not found",
@@ -155,26 +162,27 @@ const followUnfollowUserController = async (req, res) => {
     }
 
     // 3. Determine if the logged-in user is already following the target user
-    const isFollowing = targetUser.followers.includes(loggedInUserId);
+    const existingFollow = await followModel.findOne({
+      followerId: loggedInUserId,
+      followingId: targetUserId,
+    });
+
     let message = "";
 
-    if (isFollowing) {
-      // Unfollow flow: Pull IDs from both documents
-      targetUser.followers.pull(loggedInUserId);
-      loggedInUser.following.pull(targetUserId);
+    if (existingFollow) {
+      // Unfollow flow: Remove follow document
+      await followModel.deleteOne({ _id: existingFollow._id });
       message = "Unfollowed user successfully";
     } else {
-      // Follow flow: Push IDs into both documents
-      targetUser.followers.push(loggedInUserId);
-      loggedInUser.following.push(targetUserId);
+      // Follow flow: Create new follow document
+      await followModel.create({
+        followerId: loggedInUserId,
+        followingId: targetUserId,
+      });
       message = "Followed user successfully";
     }
 
-    // 4. Save both documents to the database
-    await targetUser.save();
-    await loggedInUser.save();
-
-    // 5. Send standardized response
+    // 4. Send standardized response
     return res.status(200).json({
       success: true,
       message,

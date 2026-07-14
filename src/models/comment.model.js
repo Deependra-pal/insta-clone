@@ -21,6 +21,7 @@ const commentSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "post", // Model name should match your Post model
       required: [true, "Post ID is required"],
+      index: true,
     },
 
     // User who wrote the comment
@@ -28,6 +29,7 @@ const commentSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User", // Model name should match your User model
       required: [true, "User ID is required"],
+      index: true,
     },
   },
   {
