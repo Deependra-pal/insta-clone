@@ -1,21 +1,21 @@
 /**
  * File Name: user.validation.js
  * Purpose: Validation rules and middleware for user-related requests.
- * Responsibility: Defines rules for validating registration and login request bodies using express-validator.
+ * Responsibility: Defines rules for validating registration, login, and profile parameters.
  */
 
-const { body, validationResult } = require("express-validator");
+const { body, param, validationResult } = require("express-validator");
 
 /**
  * Validation Schema: registerValidation
- * Purpose: Validates the body parameters required for user registration.
- * Checks:
- *   - username: Required, non-empty, whitespace-trimmed.
- *   - email: Required, non-empty, must be a valid email format, whitespace-trimmed.
- *   - password: Required, must be at least 8 characters.
  */
 const registerValidation = [
-  body("username").trim().notEmpty().withMessage("Username is required"),
+  body("username")
+    .trim()
+    .notEmpty()
+    .withMessage("Username is required")
+    .isAlphanumeric()
+    .withMessage("Username must be alphanumeric"),
 
   body("email")
     .trim()
@@ -33,12 +33,6 @@ const registerValidation = [
 
 /**
  * Validation Schema: loginValidation
- * Purpose: Validates the body parameters required for user login.
- * Checks:
- *   - password: Required, must be at least 8 characters.
- *   - body custom: Ensures either username or email is provided.
- *   - email: Optional, must be a valid email format.
- *   - username: Optional, must be at least 3 characters.
  */
 const loginValidation = [
   body("password")
@@ -65,30 +59,40 @@ const loginValidation = [
 ];
 
 /**
+ * Validation Schema: userIdParamValidation
+ * Purpose: Validates MongoDB ObjectIds passed in route parameters.
+ */
+const userIdParamValidation = [
+  param("userId")
+    .trim()
+    .notEmpty()
+    .withMessage("User ID parameter is required")
+    .isMongoId()
+    .withMessage("Invalid User ID format"),
+];
+
+/**
  * Middleware Name: validate
- * Why it exists: Evaluates the validation results from registration or login schemas.
- * What it checks: Checks if express-validator accumulated any validation errors.
- * What happens if validation/authentication fails: Responds with a 400 Bad Request and an array of errors.
- * Why next() is called: Transfers execution to the next controller/middleware when input validates successfully.
+ * Why it exists: Evaluates the validation results.
+ * What happens if validation fails: Responds with a 400 Bad Request and standardized JSON structure.
  */
 const validate = (req, res, next) => {
-  // 1. Gather all validation errors from the request
   const errors = validationResult(req);
 
-  // 2. Check if errors array is not empty
   if (!errors.isEmpty()) {
     return res.status(400).json({
       success: false,
-      errors: errors.array(),
+      message: "Validation failed",
+      data: { errors: errors.array() },
     });
   }
 
-  // 3. Proceed to the next handler
   next();
 };
 
 module.exports = {
   registerValidation,
   loginValidation,
+  userIdParamValidation,
   validate,
 };

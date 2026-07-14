@@ -5,24 +5,21 @@
  */
 
 const express = require("express");
-
 const authMiddleware = require("../middlewares/auth.middleware");
-const { commentValidation, validate } = require("../validations/comment.validation");
+const { commentValidation, commentIdParamValidation, validate } = require("../validations/comment.validation");
+const { postIdParamValidation } = require("../validations/post.validation");
 const commentController = require("../controller/comment.controller");
 
 const router = express.Router();
 
 /**
- * Route: POST /posts/:postId/comment
- * Middlewares:
- *   - authMiddleware: Verifies user JWT token.
- *   - commentValidation: Validates comment body text.
- *   - validate: Formats validation errors if validation fails.
- * Controller: createCommentController
+ * Route: POST /posts/:postId/comments
+ * Purpose: Create a comment on a specific post.
  */
 router.post(
-  "/:postId/comment",
+  "/posts/:postId/comments",
   authMiddleware,
+  postIdParamValidation,
   commentValidation,
   validate,
   commentController.createCommentController
@@ -30,27 +27,24 @@ router.post(
 
 /**
  * Route: GET /posts/:postId/comments
- * Middlewares:
- *   - authMiddleware: Verifies user JWT token.
- * Controller: getCommentsController
+ * Purpose: Retrieve comments for a specific post.
  */
 router.get(
-  "/:postId/comments",
+  "/posts/:postId/comments",
   authMiddleware,
+  postIdParamValidation,
+  validate,
   commentController.getCommentsController
 );
 
 /**
- * Route: PATCH /comments/:commentId
- * Middlewares:
- *   - authMiddleware: Verifies user JWT token.
- *   - commentValidation: Validates updated comment body text.
- *   - validate: Formats validation errors if validation fails.
- * Controller: updateCommentController
+ * Route: PUT /comments/:commentId
+ * Purpose: Update comment text.
  */
-router.patch(
+router.put(
   "/comments/:commentId",
   authMiddleware,
+  commentIdParamValidation,
   commentValidation,
   validate,
   commentController.updateCommentController
@@ -58,13 +52,13 @@ router.patch(
 
 /**
  * Route: DELETE /comments/:commentId
- * Middlewares:
- *   - authMiddleware: Verifies user JWT token.
- * Controller: deleteCommentController
+ * Purpose: Delete comment.
  */
 router.delete(
   "/comments/:commentId",
   authMiddleware,
+  commentIdParamValidation,
+  validate,
   commentController.deleteCommentController
 );
 

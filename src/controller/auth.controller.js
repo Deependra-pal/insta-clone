@@ -36,21 +36,26 @@ const registerController = async (req, res) => {
 
     res.cookie("token", token, {
       httpOnly: true,
-      secure: false,
+      secure: process.env.NODE_ENV === "production", // Secure cookie in production
       sameSite: "strict",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
+
+    // Strip password from the response
+    const userObj = user.toObject();
+    delete userObj.password;
 
     // 7. Response
     res.status(201).json({
       success: true,
       message: "User Registered Successfully",
-      user,
+      data: { user: userObj },
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: error.message,
+      message: error.message || "Server Error",
+      data: null,
     });
   }
 };
@@ -91,7 +96,7 @@ const loginController = async (req, res) => {
     // 6. Store Token in Cookie
     res.cookie("token", token, {
       httpOnly: true,
-      secure: false,
+      secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
@@ -100,16 +105,19 @@ const loginController = async (req, res) => {
     res.status(200).json({
       success: true,
       message: "User login successfully",
-      user: {
-        _id: user._id,
-        username: user.username,
-        email: user.email,
+      data: {
+        user: {
+          _id: user._id,
+          username: user.username,
+          email: user.email,
+        },
       },
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: error.message,
+      message: error.message || "Server Error",
+      data: null,
     });
   }
 };
@@ -127,6 +135,7 @@ const getMeController = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: "User not found",
+        data: null,
       });
     }
 
@@ -134,12 +143,13 @@ const getMeController = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "User fetched successfully",
-      user,
+      data: { user },
     });
   } catch (error) {
     return res.status(500).json({
       success: false,
-      message: error.message,
+      message: error.message || "Server Error",
+      data: null,
     });
   }
 };
@@ -153,11 +163,13 @@ const logoutController = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "User logged out successfully",
+      data: null,
     });
   } catch (error) {
     return res.status(500).json({
       success: false,
-      message: error.message,
+      message: error.message || "Server Error",
+      data: null,
     });
   }
 };

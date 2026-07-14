@@ -7,8 +7,9 @@
 const express = require("express");
 const cookieParser = require("cookie-parser");
 const authRouter = require("./routes/auth.routes");
-const postRouter = require("./Routes/post.routes")
-const commentRouter = require("./Routes/comment.routes");
+const postRouter = require("./routes/post.routes");
+const commentRouter = require("./routes/comment.routes");
+const userRouter = require("./routes/user.routes");
 
 const app = express();
 
@@ -20,10 +21,12 @@ app.use(cookieParser());
 
 // 2. Mount API Routes
 // - /api/auth: Handles user registration, login, logout, and profile retrieval.
-// - /api/post: Handles creating and retrieving user posts.
-// - /api: Handles comments endpoints (/api/posts/:postId/comment, etc.)
+// - /api/posts: Handles creating, retrieving, updating, and deleting posts.
+// - /api: Handles comments endpoints (/api/posts/:postId/comments, /api/comments/:commentId, etc.)
+// - /api/users: Handles user profile and social features (follow/unfollow).
 app.use("/api/auth", authRouter);
-app.use("/api/post", postRouter);
-app.use("/api/post", commentRouter);
+app.use("/api/posts", postRouter);
+app.use("/api", commentRouter);
+app.use("/api/users", userRouter);
 
 module.exports = app;

@@ -10,59 +10,51 @@ const postModel = require("../models/post.model");
 /**
  * Function Name: createCommentController
  * HTTP Method: POST
- * Route: /api/posts/:postId/comment
- * Access: Private
+ * Route: /api/posts/:postId/comments
+ * Access: Private (Requires JWT Auth)
  * Purpose: Allow a logged-in user to add a comment to a post.
  */
 const createCommentController = async (req, res) => {
   try {
-    // 1. Get Logged-in User ID from auth middleware (req.userId)
     const userId = req.userId;
-
-    // 2. Get Post ID from request params
     const postId = req.params.postId;
-
-    // 3. Get comment text from request body
     const { text } = req.body;
 
-    // 4. Find the post by ID
+    // 1. Find the post by ID
     const post = await postModel.findById(postId);
 
-    // 5. Return 404 if the post does not exist
+    // 2. Return 404 if the post does not exist
     if (!post) {
       return res.status(404).json({
         success: false,
         message: "Post not found",
+        data: null,
       });
     }
 
-    // 6. Create a new Comment document
+    // 3. Create and save new Comment document
     const comment = new commentModel({
       text,
       postId,
       userId,
     });
-
-    // 7. Save the comment in MongoDB
     await comment.save();
 
-    // 8. Push the comment ObjectId into the Post.comments array
+    // 4. Push the comment ObjectId into the Post.comments array and save
     post.comments.push(comment._id);
-
-    // 9. Save the post
     await post.save();
 
-    // 10. Return success response
+    // 5. Return success response in standardized format
     return res.status(201).json({
       success: true,
       message: "Comment created successfully",
-      comment,
+      data: { comment },
     });
   } catch (error) {
-    // 11. Handle server errors
     return res.status(500).json({
       success: false,
-      message: error.message,
+      message: error.message || "Server Error",
+      data: null,
     });
   }
 };
@@ -71,26 +63,26 @@ const createCommentController = async (req, res) => {
  * Function Name: getCommentsController
  * HTTP Method: GET
  * Route: /api/posts/:postId/comments
- * Access: Private
+ * Access: Private (Requires JWT Auth)
  * Purpose: Fetch all comments of a specific post.
  */
 const getCommentsController = async (req, res) => {
   try {
-    // 1. Get Post ID
     const postId = req.params.postId;
 
-    // 2. Find Post
+    // 1. Find Post
     const post = await postModel.findById(postId);
 
-    // 3. Return 404 if not found
+    // 2. Return 404 if not found
     if (!post) {
       return res.status(404).json({
         success: false,
         message: "Post not found",
+        data: null,
       });
     }
 
-    // 4. Populate comments (along with commenter details)
+    // 3. Populate comments
     await post.populate({
       path: "comments",
       populate: {
@@ -99,72 +91,70 @@ const getCommentsController = async (req, res) => {
       },
     });
 
-    // 5. Return comments
+    // 4. Return comments in standardized format
     return res.status(200).json({
       success: true,
       message: "Comments fetched successfully",
-      comments: post.comments,
+      data: { comments: post.comments },
     });
   } catch (error) {
-    // Handle server errors
     return res.status(500).json({
       success: false,
-      message: error.message,
+      message: error.message || "Server Error",
+      data: null,
     });
   }
 };
 
 /**
  * Function Name: updateCommentController
- * HTTP Method: PATCH
+ * HTTP Method: PUT
  * Route: /api/comments/:commentId
- * Access: Private
+ * Access: Private (Requires JWT Auth)
  * Purpose: Allow only the comment owner to update their comment.
  */
 const updateCommentController = async (req, res) => {
   try {
-    // 1. Get Logged-in User ID
     const userId = req.userId;
-
-    // 2. Get Comment ID
     const commentId = req.params.commentId;
+    const { text } = req.body;
 
-    // 3. Find Comment
+    // 1. Find Comment
     const comment = await commentModel.findById(commentId);
 
-    // 4. Return 404 if not found
+    // 2. Return 404 if not found
     if (!comment) {
       return res.status(404).json({
         success: false,
         message: "Comment not found",
+        data: null,
       });
     }
 
-    // 5. Check ownership (compare ObjectIds using Mongoose best practices)
+    // 3. Check ownership
     if (!comment.userId.equals(userId)) {
       return res.status(403).json({
         success: false,
         message: "You are not authorized to update this comment",
+        data: null,
       });
     }
 
-    // 6. Update comment text
-    comment.text = req.body.text;
-
-    // 7. Save comment
+    // 4. Update comment text and save
+    comment.text = text;
     await comment.save();
 
-    // 8. Return success response
+    // 5. Return success response
     return res.status(200).json({
       success: true,
       message: "Comment updated successfully",
-      comment,
+      data: { comment },
     });
   } catch (error) {
-    // Handle server errors
     return res.status(500).json({
       success: false,
-      message: error.message,
+      message: error.message || "Server Error",
+      data: null,
     });
   }
 };
@@ -173,56 +163,56 @@ const updateCommentController = async (req, res) => {
  * Function Name: deleteCommentController
  * HTTP Method: DELETE
  * Route: /api/comments/:commentId
- * Access: Private
+ * Access: Private (Requires JWT Auth)
  * Purpose: Allow only the comment owner to delete their comment.
  */
 const deleteCommentController = async (req, res) => {
   try {
-    // 1. Get Logged-in User ID
     const userId = req.userId;
-
-    // 2. Get Comment ID
     const commentId = req.params.commentId;
 
-    // 3. Find Comment
+    // 1. Find Comment
     const comment = await commentModel.findById(commentId);
 
-    // 4. Return 404 if not found
+    // 2. Return 404 if not found
     if (!comment) {
       return res.status(404).json({
         success: false,
         message: "Comment not found",
+        data: null,
       });
     }
 
-    // 5. Check ownership (compare ObjectIds using Mongoose best practices)
+    // 3. Check ownership
     if (!comment.userId.equals(userId)) {
       return res.status(403).json({
         success: false,
         message: "You are not authorized to delete this comment",
+        data: null,
       });
     }
 
-    // 6. Remove comment ObjectId from Post.comments array
+    // 4. Remove comment ObjectId from Post.comments array
     const post = await postModel.findById(comment.postId);
     if (post) {
       post.comments.pull(commentId);
       await post.save();
     }
 
-    // 7. Delete Comment document
+    // 5. Delete Comment document
     await comment.deleteOne();
 
-    // 8. Return success response
+    // 6. Return success response
     return res.status(200).json({
       success: true,
       message: "Comment deleted successfully",
+      data: null,
     });
   } catch (error) {
-    // Handle server errors
     return res.status(500).json({
       success: false,
-      message: error.message,
+      message: error.message || "Server Error",
+      data: null,
     });
   }
 };

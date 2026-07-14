@@ -1,20 +1,20 @@
 /**
  * File Name: post.routes.js
  * Purpose: Routing definitions for post-related operations.
- * Responsibility: Maps endpoints for creating and fetching posts to their respective middlewares and controllers.
+ * Responsibility: Maps endpoints for creating, retrieving, liking, updating, and deleting posts.
  */
 
 const express = require("express");
-
 const authMiddleware = require("../middlewares/auth.middleware");
 const {
   createPostValidation,
+  postIdParamValidation,
+  validateImage,
   validate,
 } = require("../validations/post.validation");
 const multer = require("multer");
 
 // Configure multer storage: We use memory storage to keep files as buffers
-// in order to upload them directly to ImageKit without writing them to disk.
 const upload = multer({ storage: multer.memoryStorage() });
 
 const postController = require("../controller/post.controller");
@@ -23,70 +23,75 @@ const router = express.Router();
 
 /**
  * Route: POST /
- * Middlewares:
- *   - upload.single("image"): Parses a single uploaded file under the field name "image".
- *   - createPostValidation: Validates post request body fields (e.g., caption).
- *   - validate: Formats validation errors if validation fails.
- *   - authMiddleware: Verifies the user JWT token.
- * Controller: createPostController (Uploads image to ImageKit and saves post)
+ * Purpose: Create a new post.
  */
 router.post(
   "/",
+  authMiddleware,
   upload.single("image"),
+  validateImage,
   createPostValidation,
   validate,
-  authMiddleware,
-  postController.createPostController,
+  postController.createPostController
 );
 
 /**
  * Route: GET /
- * Middlewares:
- *   - authMiddleware: Verifies the user JWT token.
- * Controller: getPostController (Fetches all posts belonging to the authenticated user)
+ * Purpose: Retrieve all posts belonging to the authenticated user.
  */
-router.get("/", authMiddleware, postController.getPostController);
-
-// ========================================
-// Get Single Post Controller
-// Method: GET
-// Route: /api/posts/:postId
-// Access: Private
-// Purpose: Retrieve a specific post created by the logged-in user.
-// ========================================
 router.get(
-  "/details/:postId",
+  "/",
   authMiddleware,
-  postController.getPostDeatilsController,
+  postController.getPostController
 );
 
-// ========================================
-// Update Post
-// Method: PATCH
-// Route: /api/posts/update/:postId
-// Access: Private
-// Purpose: Update the caption of a post owned by the logged-in user.
-// ========================================
-router.patch(
-  "/update/:postId",
+/**
+ * Route: GET /:postId
+ * Purpose: Retrieve details of a specific post.
+ */
+router.get(
+  "/:postId",
   authMiddleware,
-  postController.updatePostController,
+  postIdParamValidation,
+  validate,
+  postController.getPostDeatilsController
 );
 
+/**
+ * Route: PUT /:postId
+ * Purpose: Update post caption.
+ */
+router.put(
+  "/:postId",
+  authMiddleware,
+  postIdParamValidation,
+  createPostValidation,
+  validate,
+  postController.updatePostController
+);
+
+/**
+ * Route: DELETE /:postId
+ * Purpose: Delete a post and its image on CDN.
+ */
 router.delete(
-  "/delete/:postId",
+  "/:postId",
   authMiddleware,
-  postController.deletePostController,
+  postIdParamValidation,
+  validate,
+  postController.deletePostController
 );
 
-// ⬜ Like Post
-// Method : POST
-
-// Route : /api/posts/:postId/like
-
-router.post("/likes/:postId", authMiddleware, postController.likeController)
-
-
-
+/**
+ * Route: POST /:postId/like
+ * Purpose: Toggle like status of a post.
+ */
+router.post(
+  "/:postId/like",
+  authMiddleware,
+  postIdParamValidation,
+  validate,
+  postController.likeController
+);
 
 module.exports = router;

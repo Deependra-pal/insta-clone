@@ -1,16 +1,13 @@
 /**
  * File Name: post.validation.js
  * Purpose: Validation rules and middleware for post-related requests.
- * Responsibility: Validates the request body fields (like caption) and uploaded file presence using express-validator.
+ * Responsibility: Validates body fields, file presence, and route parameters.
  */
 
-const { body, validationResult } = require("express-validator");
+const { body, param, validationResult } = require("express-validator");
 
 /**
  * Validation Schema: createPostValidation
- * Purpose: Validates post creation body parameters.
- * Checks:
- *   - caption: Optional, must be under 500 characters.
  */
 const createPostValidation = [
   body("caption")
@@ -20,46 +17,65 @@ const createPostValidation = [
 ];
 
 /**
+ * Validation Schema: postIdParamValidation
+ * Purpose: Validates MongoDB ObjectId passed as a route parameter.
+ */
+const postIdParamValidation = [
+  param("postId")
+    .trim()
+    .notEmpty()
+    .withMessage("Post ID is required")
+    .isMongoId()
+    .withMessage("Invalid Post ID format"),
+];
+
+/**
  * Middleware Name: validateImage
- * Why it exists: To ensure that an image file is uploaded in the request.
- * What it checks: Checks if req.file is present.
- * What happens if validation/authentication fails: Responds with a 400 Bad Request if the file is missing.
- * Why next() is called: To pass control to the next handler if the image exists.
+ * Purpose: Ensures an image file is uploaded in the request.
  */
 const validateImage = (req, res, next) => {
-  // 1. Check if the file is attached to the request
   if (!req.file) {
     return res.status(400).json({
       success: false,
       message: "Image is required",
+      data: null,
     });
   }
 
-  // 2. Proceed to the next handler
+  // Basic MIME type validation for security
+  const allowedMimeTypes = ["image/jpeg", "image/png", "image/webp"];
+  if (!allowedMimeTypes.includes(req.file.mimetype)) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid file format. Only JPEG, PNG, and WEBP images are allowed.",
+      data: null,
+    });
+  }
+
   next();
 };
 
 /**
  * Middleware Name: validate
- * Why it exists: Evaluates the validation results from the validation array.
- * What it checks: Checks if there are any validation errors registered in express-validator.
- * What happens if validation/authentication fails: Returns a 400 Bad Request with an array of errors.
- * Why next() is called: To proceed to the target handler when no errors are found.
+ * Purpose: Formats validation errors if validation fails.
  */
 const validate = (req, res, next) => {
-  // 1. Gather all validation errors from the request
   const errors = validationResult(req);
 
-  // 2. Check if errors array is not empty
   if (!errors.isEmpty()) {
     return res.status(400).json({
       success: false,
-      errors: errors.array(),
+      message: "Validation failed",
+      data: { errors: errors.array() },
     });
   }
 
-  // 3. Proceed to the next handler
   next();
 };
 
-module.exports = { createPostValidation, validate };
+module.exports = {
+  createPostValidation,
+  postIdParamValidation,
+  validateImage,
+  validate,
+};

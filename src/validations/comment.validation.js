@@ -1,12 +1,13 @@
 /**
-* File Name: comment.validation.js
-* Purpose: Validate comment request body.
-*/
+ * File Name: comment.validation.js
+ * Purpose: Validate comment requests.
+ * Responsibility: Outlines criteria for comments and validates comment IDs.
+ */
 
-const { body, validationResult } = require("express-validator");
+const { body, param, validationResult } = require("express-validator");
 
 /**
- * Validation Rules
+ * Validation Schema: commentValidation
  */
 const commentValidation = [
   body("text")
@@ -15,6 +16,18 @@ const commentValidation = [
     .withMessage("Comment text is required")
     .isLength({ max: 500 })
     .withMessage("Comment cannot exceed 500 characters"),
+];
+
+/**
+ * Validation Schema: commentIdParamValidation
+ */
+const commentIdParamValidation = [
+  param("commentId")
+    .trim()
+    .notEmpty()
+    .withMessage("Comment ID is required")
+    .isMongoId()
+    .withMessage("Invalid Comment ID format"),
 ];
 
 /**
@@ -27,7 +40,7 @@ const validate = (req, res, next) => {
     return res.status(400).json({
       success: false,
       message: "Validation failed",
-      errors: errors.array(),
+      data: { errors: errors.array() },
     });
   }
 
@@ -36,5 +49,6 @@ const validate = (req, res, next) => {
 
 module.exports = {
   commentValidation,
+  commentIdParamValidation,
   validate,
 };
