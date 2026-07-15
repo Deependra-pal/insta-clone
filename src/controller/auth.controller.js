@@ -128,7 +128,7 @@ const getMeController = async (req, res) => {
     const userId = req.userId;
 
     // 2. Find User
-    const user = await userModel.findById(userId).select("-password");
+    const user = await userModel.findById(userId).select("username email bio profilePicture");
 
     // 3. User Not Found
     if (!user) {
@@ -143,7 +143,14 @@ const getMeController = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "User fetched successfully",
-      data: { user },
+      data: {
+        user: {
+          username: user.username,
+          email: user.email,
+          bio: user.bio,
+          profilePicture: user.profilePicture,
+        },
+      },
     });
   } catch (error) {
     return res.status(500).json({
