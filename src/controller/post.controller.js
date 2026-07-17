@@ -8,6 +8,7 @@ const { toFile } = require("@imagekit/nodejs");
 const client = require("../config/imageKit.config");
 const postModel = require("../models/post.model");
 const likeModel = require("../models/like.model");
+const userModel = require("../models/user.model");
 
 /**
  * Function Name: createPostController
@@ -42,6 +43,11 @@ const createPostController = async (req, res) => {
       owner: req.userId,
     });
 
+    // Sync with User's posts array
+    await userModel.findByIdAndUpdate(req.userId, {
+      $push: { posts: post._id }
+    });
+
     // 4. Send Success Response in standardized format
     return res.status(201).json({
       success: true,
@@ -71,25 +77,29 @@ const getPostController = async (req, res) => {
     // 1. Retrieve Logged-in User ID from Request (populated by authMiddleware)
     const userId = req.userId;
 
-    // 2. Fetch User Posts from the Database
+    // 2. Fetch User Posts from the Database, populated with owner info and sorted by creation date
     const posts = await postModel.find({
       owner: userId,
-    });
+    })
+      .populate("owner", "username profilePicture")
+      .sort({ createdAt: -1 });
 
-    // 3. Check if User Has Any Posts
-    if (posts.length === 0) {
-      return res.status(200).json({
-        success: true,
-        message: "No posts found",
-        data: { posts: [] },
-      });
-    }
+    // 3. Map posts to calculate likesCount and isLiked status dynamically
+    const postsWithLikes = await Promise.all(posts.map(async (post) => {
+      const likesCount = await likeModel.countDocuments({ postId: post._id });
+      const isLiked = await likeModel.exists({ postId: post._id, userId });
+      return {
+        ...post.toObject(),
+        likesCount,
+        isLiked: !!isLiked,
+      };
+    }));
 
     // 4. Send Success Response with Data
     return res.status(200).json({
       success: true,
       message: "Posts fetched successfully",
-      data: { posts },
+      data: { posts: postsWithLikes },
     });
   } catch (err) {
     // 5. Handle Errors
@@ -116,8 +126,8 @@ const getPostDeatilsController = async (req, res) => {
     // 2. Get Post ID from Request Parameters
     const postId = req.params.postId;
 
-    // 3. Find the Post by ID
-    const post = await postModel.findById(postId);
+    // 3. Find the Post by ID and populate owner
+    const post = await postModel.findById(postId).populate("owner", "username profilePicture");
 
     // 4. Check if the Post Exists
     if (!post) {
@@ -137,11 +147,21 @@ const getPostDeatilsController = async (req, res) => {
       });
     }
 
+    // Calculate likes count and isLiked status dynamically
+    const likesCount = await likeModel.countDocuments({ postId });
+    const isLiked = await likeModel.exists({ postId, userId });
+
+    const postObj = {
+      ...post.toObject(),
+      likesCount,
+      isLiked: !!isLiked,
+    };
+
     // 6. Send Success Response with Post Details
     return res.status(200).json({
       success: true,
       message: "Post fetched successfully",
-      data: { post },
+      data: { post: postObj },
     });
   } catch (error) {
     // 7. Handle Server Errors
@@ -260,6 +280,11 @@ const deletePostController = async (req, res) => {
 
     // 7. Delete Post from Database
     await post.deleteOne();
+
+    // Pull from User's posts array
+    await userModel.findByIdAndUpdate(userId, {
+      $pull: { posts: postId }
+    });
 
     return res.status(200).json({
       success: true,

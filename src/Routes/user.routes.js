@@ -45,4 +45,28 @@ router.post(
   userController.followUnfollowUserController
 );
 
+/**
+ * Route: GET /:userId/followers
+ * Purpose: Retrieve users following the specified user.
+ */
+router.get(
+  "/:userId/followers",
+  authMiddleware,
+  userIdParamValidation,
+  validate,
+  userController.getFollowersController
+);
+
+/**
+ * Route: GET /:userId/following
+ * Purpose: Retrieve users followed by the specified user.
+ */
+router.get(
+  "/:userId/following",
+  authMiddleware,
+  userIdParamValidation,
+  validate,
+  userController.getFollowingController
+);
+
 module.exports = router;

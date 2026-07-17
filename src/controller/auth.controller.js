@@ -145,6 +145,7 @@ const getMeController = async (req, res) => {
       message: "User fetched successfully",
       data: {
         user: {
+          _id: user._id,
           username: user.username,
           email: user.email,
           bio: user.bio,

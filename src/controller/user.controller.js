@@ -6,6 +6,8 @@
 
 const userModel = require("../models/user.model");
 const followModel = require("../models/follow.model");
+const likeModel = require("../models/like.model");
+const postModel = require("../models/post.model");
 
 /**
  * Controller Name: getUserProfileController
@@ -21,10 +23,7 @@ const getUserProfileController = async (req, res) => {
 
     // 2. Query MongoDB for the user with the given ID
     // - Select all fields except the password for security
-    // - Populate 'posts' to return the user's posts
-    const user = await userModel.findById(userId)
-      .select("-password")
-      .populate("posts");
+    const user = await userModel.findById(userId).select("-password");
 
     // 3. If user is not found, return 404 Not Found
     if (!user) {
@@ -49,6 +48,22 @@ const getUserProfileController = async (req, res) => {
     const followersCount = await followModel.countDocuments({ followingId: userId });
     const followingCount = await followModel.countDocuments({ followerId: userId });
 
+    // Retrieve posts directly by querying the Post collection using the owner's ID
+    const posts = await postModel.find({ owner: userId })
+      .populate("owner", "username profilePicture")
+      .sort({ createdAt: -1 });
+
+    // Calculate likes count and isLiked status dynamically for all user posts
+    const postsWithLikes = await Promise.all((posts || []).map(async (post) => {
+      const likesCount = await likeModel.countDocuments({ postId: post._id });
+      const isLiked = await likeModel.exists({ postId: post._id, userId: req.userId });
+      return {
+        ...post.toObject(),
+        likesCount,
+        isLiked: !!isLiked,
+      };
+    }));
+
     // 5. Send successful response with user details in standard format
     return res.status(200).json({
       success: true,
@@ -63,8 +78,8 @@ const getUserProfileController = async (req, res) => {
           bio: user.bio,
           followersCount,
           followingCount,
-          postsCount: user.posts.length,
-          posts: user.posts,
+          postsCount: (posts || []).length,
+          posts: postsWithLikes,
           isMe,
           isFollowing: !!isFollowing,
         },
@@ -197,8 +212,60 @@ const followUnfollowUserController = async (req, res) => {
   }
 };
 
+/**
+ * Controller Name: getFollowersController
+ * Purpose: Retrieve the list of users following a specific user.
+ */
+const getFollowersController = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const follows = await followModel.find({ followingId: userId })
+      .populate("followerId", "username profilePicture bio");
+    const followers = follows.map(f => f.followerId).filter(Boolean);
+
+    return res.status(200).json({
+      success: true,
+      message: "Followers list fetched successfully",
+      data: { followers },
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Server Error",
+      data: null,
+    });
+  }
+};
+
+/**
+ * Controller Name: getFollowingController
+ * Purpose: Retrieve the list of users followed by a specific user.
+ */
+const getFollowingController = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const follows = await followModel.find({ followerId: userId })
+      .populate("followingId", "username profilePicture bio");
+    const following = follows.map(f => f.followingId).filter(Boolean);
+
+    return res.status(200).json({
+      success: true,
+      message: "Following list fetched successfully",
+      data: { following },
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Server Error",
+      data: null,
+    });
+  }
+};
+
 module.exports = {
   getUserProfileController,
   updateUserProfileController,
   followUnfollowUserController,
+  getFollowersController,
+  getFollowingController,
 };
