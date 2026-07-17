@@ -1,3 +1,6 @@
+const cors = require("cors");
+
+
 /**
  * File Name: app.js
  * Purpose: Express application configuration and setup.
@@ -12,6 +15,13 @@ const commentRouter = require("./routes/comment.routes");
 const userRouter = require("./routes/user.routes");
 
 const app = express();
+
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    credentials: true,
+  })
+);
 
 // 1. Configure Global Middlewares
 // - express.json(): Required to parse incoming JSON payloads in request bodies.
@@ -28,5 +38,7 @@ app.use("/api/auth", authRouter);
 app.use("/api/posts", postRouter);
 app.use("/api", commentRouter);
 app.use("/api/users", userRouter);
+
+
 
 module.exports = app;

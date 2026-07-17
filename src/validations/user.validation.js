@@ -76,10 +76,27 @@ const userIdParamValidation = [
  * Why it exists: Evaluates the validation results.
  * What happens if validation fails: Responds with a 400 Bad Request and standardized JSON structure.
  */
+const fs = require("fs");
+const path = require("path");
+
 const validate = (req, res, next) => {
   const errors = validationResult(req);
 
   if (!errors.isEmpty()) {
+    try {
+      const logFilePath = path.join(__dirname, "../../validation-debug.log");
+      const logData = {
+        timestamp: new Date().toISOString(),
+        url: req.originalUrl || req.url,
+        method: req.method,
+        body: req.body,
+        errors: errors.array(),
+      };
+      fs.appendFileSync(logFilePath, JSON.stringify(logData, null, 2) + "\n\n");
+    } catch (logErr) {
+      console.error("Failed to write to validation-debug.log:", logErr);
+    }
+
     return res.status(400).json({
       success: false,
       message: "Validation failed",
