@@ -63,10 +63,21 @@ const validate = (req, res, next) => {
   const errors = validationResult(req);
 
   if (!errors.isEmpty()) {
+    const formattedErrors = errors.array().map(err => {
+      const errorObj = {
+        field: err.path || err.param,
+        message: err.msg,
+      };
+      if (err.value !== undefined) {
+        errorObj.value = err.value;
+      }
+      return errorObj;
+    });
+
     return res.status(400).json({
       success: false,
       message: "Validation failed",
-      data: { errors: errors.array() },
+      errors: formattedErrors,
     });
   }
 
